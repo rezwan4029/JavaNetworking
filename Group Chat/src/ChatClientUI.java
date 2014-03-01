@@ -9,21 +9,20 @@ import java.net.*;
 import java.util.*;
 import javax.swing.*;
 
-public class ChatClient {
+public class ChatClientUI {
 
     static class ChatAccess extends Observable {
         private Socket socket;
-        private OutputStream outputStream;
+        private OutputStream out;
         @Override
         public void notifyObservers(Object arg) {
             super.setChanged();
             super.notifyObservers(arg);
         }
 
-        /** Create socket, and receiving thread */
         public ChatAccess(String server, int port) throws IOException {
             socket = new Socket(server, port);
-            outputStream = socket.getOutputStream();
+            out = socket.getOutputStream();
 
             Thread receivingThread = new Thread() {
                 @Override
@@ -32,30 +31,26 @@ public class ChatClient {
                         BufferedReader reader = new BufferedReader( new InputStreamReader(socket.getInputStream()) );
                         String Str ;
                         while (( Str = reader.readLine()) != null ) notifyObservers( Str );
-                    } catch (IOException ex) {
-                        notifyObservers(ex);
+                    } catch (IOException e) {
+                        notifyObservers(e);
                     }
                 }
             };
             receivingThread.start();
         }
 
-        /** Send a line of text */
-        public void send(String msg) {
+        public void Send(String msg) {
             try {
-                outputStream.write(( msg + "\n").getBytes());
-                outputStream.flush();
-            } catch (IOException ex) {
-                notifyObservers(ex);
+                out.write(( msg + "\n").getBytes());
+            } catch (IOException e) {
+                notifyObservers(e);
             }
         }
-
-        /** Close the socket */
         public void close() {
             try {
                 socket.close();
-            } catch (IOException ex) {
-                notifyObservers(ex);
+            } catch (IOException e) {
+                notifyObservers(e);
             }
         }
     }
@@ -90,7 +85,7 @@ public class ChatClient {
             ActionListener sendListener = new ActionListener() {
                 public void actionPerformed(ActionEvent e) {
                     String Str = inputTextField.getText();
-                    if ( Str != null && Str.trim().length() > 0) chatAccess.send( Str );
+                    if ( Str != null && Str.trim().length() > 0) chatAccess.Send( Str );
                     inputTextField.setText("");
                 }
             };

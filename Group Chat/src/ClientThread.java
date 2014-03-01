@@ -5,8 +5,8 @@ import java.net.Socket;
 
 public class ClientThread extends Thread {
 	private String clientName;
-	private DataInputStream is;
-	private PrintStream os;
+	private DataInputStream in;
+	private PrintStream out;
 	private Socket clientSocket;
 	private ClientThread[] T;
 	private int MxClientCnt;
@@ -24,11 +24,11 @@ public class ClientThread extends Thread {
 		int MxClientCnt = this.MxClientCnt;
 		ClientThread[] T = this.T;
 		try {
-			is = new DataInputStream(clientSocket.getInputStream());
-			os = new PrintStream(clientSocket.getOutputStream());
-			
-			Name = is.readLine();
-			os.println("Welcome " + Name + " to the chat room !!!\n");
+			in = new DataInputStream(clientSocket.getInputStream());
+			out = new PrintStream(clientSocket.getOutputStream());
+			out.printf("Enter your name : ");
+			Name = in.readLine();
+			out.println("Welcome " + Name + " to the chat room !!!\n");
 			synchronized (this) {
 				for (int i = 0 ; i < MxClientCnt; i++ ) 
 					if (T[i] != null && T[i] == this) {
@@ -37,12 +37,12 @@ public class ClientThread extends Thread {
 					}
 				for (int i = 0; i < MxClientCnt; i++) {
 					if (T[i] != null && T[i] != this) {
-						T[i].os.println(zZz + "\n" + Name + " has entered the chat room\n" + zZz);
+						T[i].out.println(zZz + "\n" + Name + " has entered the chat room\n" + zZz);
 					}
 				}
 			}
 			while (true) {
-				String Txt = is.readLine();
+				String Txt = in.readLine();
 				if ( Txt.equals("QUIT") ) break;
 				if ( Txt.charAt(0) == '@' ) {
 					int len = Txt.length();
@@ -56,18 +56,18 @@ public class ClientThread extends Thread {
 						if( flag ) msg += Txt.charAt(pos);
 						else CName += Txt.charAt(pos);
 					}
-					Txt = Txt.trim();
+					msg = msg.trim();
 					boolean found = false ;
 					synchronized (this) {
 						for (int i = 0; i < MxClientCnt; i++) 
 							if (T[i] != null && T[i] != this && T[i].clientName.equals(CName) ) {
-								T[i].os.println("[ " + Name + " ] : "	+ msg);
-								this.os.println("Me" + " >> " + msg);
+								T[i].out.println("[ " + Name + " ] : "	+ msg);
+								this.out.println("Me" + " >> " + msg);
 								found = true ;
 								break;
 							}
 						if( found == false ) {
-							this.os.println("There is no such user named " + Name + " !!!");
+							this.out.println("There is no such user named " + Name + " !!!");
 						}
 					}
 
@@ -75,14 +75,13 @@ public class ClientThread extends Thread {
 
 				} else {
 					synchronized (this) {
-						
 						for (int i = 0; i < MxClientCnt; i++) 
 							if (T[i] != null && T[i].clientName != null && T[i] != this) 
-								T[i].os.println("[ " + Name + " ] : " + Txt );
+								T[i].out.println("[ " + Name + " ] : " + Txt );
 						
 						for (int i = 0; i < MxClientCnt; i++) 
 							if (T[i] != null && T[i] == this) 
-								T[i].os.println("Me" + " >> " + Txt);
+								T[i].out.println("Me" + " >> " + Txt);
 					}
 				}
 			}
@@ -90,10 +89,10 @@ public class ClientThread extends Thread {
 				
 				for (int i = 0; i < MxClientCnt; i++) 
 					if (T[i] != null && T[i] != this) 
-						T[i].os.println(zZz + "\n" + Name + " has left from the chat room\n" + zZz);
+						T[i].out.println(zZz + "\n" + Name + " has left from the chat room\n" + zZz);
 			
 			}
-			os.println("You Left the room ");
+			out.println("You Left the room ");
 
 			// clear the current thread
 			synchronized (this) {
@@ -103,8 +102,8 @@ public class ClientThread extends Thread {
 						break;
 					}
 			}
-			is.close();
-			os.close();
+			in.close();
+			out.close();
 			clientSocket.close();
 		} catch (IOException e) {
 			System.out.println(e);
